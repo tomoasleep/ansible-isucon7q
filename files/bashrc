@@ -1,0 +1,9 @@
+#!/bin/bash
+if [ -f /etc/bashrc ]; then
+  . /etc/bashrc
+fi
+
+export PATH=/usr/local/bin:$PATH
+export PATH=$HOME/local/ruby/bin:$PATH
+export PATH=$HOME/local/go/bin:$HOME/go/bin:$PATH
+export GOROOT=$HOME/local/go

@@ -1,0 +1,15 @@
+---
+- hosts: web
+  sudo: yes
+  gather_facts: no
+  tasks:
+    - apt: name=nginx state=present
+    - copy: src=../isucon7-qualify/files/app/nginx.conf dest=/etc/nginx/sites-available/nginx.conf owner=root mode=644
+    - file: path=/etc/nginx/sites-enabled/default state=absent
+    - file: src=/etc/nginx/sites-available/nginx.conf dest=/etc/nginx/sites-enabled/nginx.conf state=link
+      notify:
+        - restart nginx
+    - service: name=nginx state=running enabled=true
+  handlers:
+    - name: restart nginx
+      action: service name=nginx state=restarted

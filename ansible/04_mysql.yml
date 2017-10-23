@@ -1,0 +1,48 @@
+---
+- hosts: db
+  gather_facts: no
+  sudo: yes
+  sudo_user: isucon
+  tasks:
+    - git:
+        repo=https://github.com/isucon/isucon7-qualify.git
+        dest=/tmp/isucon7-qualify
+    - shell: |
+        source $HOME/.bashrc
+        go get github.com/constabulary/gb/...
+        cd /tmp/isucon7-qualify/bench
+        gb vendor restore
+        make
+        /tmp/isucon7-qualify/bench/bin/gen-initial-dataset
+        mv /tmp/isucon7-qualify/bench/isucon7q-initial-dataset.sql.gz /home/isucon/isucon7q-initial-dataset.sql.gz
+      args:
+        executable: /bin/bash
+        creates: /home/isucon/isucon7q-initial-dataset.sql.gz
+
+- hosts: db
+  gather_facts: no
+  sudo: yes
+  tasks:
+    - apt: name=mysql-server state=present
+    - file: path=/var/run/mysqld state=directory owner=mysql mode=775
+    - name: copy mysqld.cnf
+      copy: src=../isucon7-qualify/files/db/mysqld.cnf dest=/etc/mysql/mysql.conf.d/mysqld.cnf owner=root mode=644
+      notify:
+        - restart mysqld
+    - service: name=mysql state=running enabled=true
+    - apt: name=python-mysqldb state=present
+    - mysql_user: name=isucon password=isucon priv=*.*:ALL state=present
+    - mysql_user: name=isucon password=isucon host=% priv=*.*:ALL state=present
+
+    - shell: |
+        source $HOME/.bashrc
+        cd /tmp/isucon7-qualify/db
+        ./init.sh
+        zcat /home/isucon/isucon7q-initial-dataset.sql.gz | mysql --default-character-set=utf8 isubata
+      args:
+        executable: /bin/bash
+    - file: path=/tmp/isucon7-qualify state=absent
+
+  handlers:
+    - name: restart mysqld
+      action: service name=mysql state=restarted

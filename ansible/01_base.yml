@@ -1,0 +1,40 @@
+---
+- hosts: all
+  sudo: yes
+  gather_facts: no
+  tasks:
+    - apt: upgrade=safe update_cache=true
+    - apt: name={{item}} state=present install_recommends=no
+      with_items:
+        - curl 
+        - libreadline-dev
+        - pkg-config
+        - autoconf
+        - automake
+        - build-essential
+        - libmysqlclient-dev
+        - libssl-dev
+        - python3
+        - python3-dev
+        - python3-venv
+        - openjdk-8-jdk-headless
+        - libxml2-dev
+        - libcurl4-openssl-dev
+        - libxslt1-dev
+        - re2c
+        - bison
+        - libbz2-dev
+        - libreadline-dev
+        - libssl-dev
+        - gettext
+        - libgettextpo-dev
+        - libicu-dev
+        - libmhash-dev
+        - libmcrypt-dev
+        - libgd-dev
+        - libtidy-dev
+    - group: name=isucon
+    - user: name=isucon groups=isucon
+    - file: path=/home/isucon owner=isucon group=isucon mode=755 state=directory
+    - copy: src=../files/bashrc dest=/home/isucon/.bashrc owner=isucon mode=755
+    - copy: src=../files/sudoers.d/isucon dest=/etc/sudoers.d/isucon owner=root mode=440

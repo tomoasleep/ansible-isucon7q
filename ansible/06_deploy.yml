@@ -1,0 +1,40 @@
+---
+- hosts: web
+  gather_facts: no
+  sudo: yes
+  sudo_user: isucon
+  tasks:
+    - git:
+        repo=https://github.com/isucon/isucon7-qualify.git
+        dest=/tmp/isucon7-qualify
+    - command: rsync -avz --delete /tmp/isucon7-qualify/webapp /home/isucon/isubata
+    - file: path=/tmp/isucon7-qualify state=absent
+    - name: ruby
+      command: /home/isucon/local/ruby/bin/bundle install --path vendor/bundler
+      args:
+        chdir: /home/isucon/isubata/webapp/ruby
+
+- hosts: web
+  gather_facts: no
+  sudo: yes
+  tasks:
+    - copy: src=../isucon7-qualify/files/app/env.sh dest=/home/isucon/env.sh owner=isucon mode=0644
+    - name: ruby service
+      copy: src=../isucon7-qualify/files/app/isubata.ruby.service dest=/lib/systemd/system/isubata.ruby.service owner=root mode=644
+      notify:
+        - restart ruby service
+
+    - name: enable ruby service
+      systemd: 
+        name: isubata.ruby
+        state: started
+        daemon_reload: yes
+        enabled: yes
+  handlers:
+    - name: restart ruby service
+      systemd: 
+        name: isubata.ruby
+        state: restarted
+        daemon_reload: yes
+        enabled: yes
+
